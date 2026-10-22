@@ -1,0 +1,89 @@
+# 입찰보고서 case.yaml 템플릿
+# 1) 복사 → 보고서 폴더에 case.yaml
+# 2) python -m bid_report.build_report case.yaml --check   ← 누락 질문 목록 출력(필수 비면 exit 2)
+# 3) fetch_case / 네이버 수집 / 입지등급 → 아래 채움
+# 4) python -m bid_report.build_report case.yaml           ← PPTX 14장 + report_tables.md
+#
+# 금액 단위: case 의 감정가·최저가 = 원 / scenarios·tenant_now = 만원 / bid_rows = 억
+# 문장 치환: {cross[코드]} {mult[낙찰가][코드]} {tax_pct} {cap_pct} {min_price} {n_raw} {n_ded} {n_large}
+#           {n_markers} {n_mapped} {n_marker_cards}
+# 강조: 문장 안 **굵게**
+
+output: "(입찰보고서){사건번호}_{건물}.pptx"
+written: "YYYY-MM-DD"
+edition: "초판 · YYYY-MM-DD"
+
+# ───────── 게이트 필수 3종 ─────────
+case:
+  사건번호: ""          # product_id 가 없으면 법원도 필수
+  법원: ""
+  계: ""
+  product_id: ""        # 옥션원 URL 의 product_id
+  건물명: ""
+  호실표기: ""          # 표지 둘째 줄 예: "2층 201호 (전용 101.05평 · 사무소)"
+  층: ""
+  신주소: ""
+  현황: ""
+  감정가: 0             # 원
+  최저가: 0             # 원
+  회차: 0
+  매각기일: ""          # "2026-09-21 (월)" — 요일은 옥션원 원문에서 옮긴다(암산 금지)
+  전용평: 0.0
+  사용승인: ""
+naver_map_url: ""
+buyer:
+  명의: "법인"          # 기본 법인 — 개인이면 바꾼다
+  법인설립연수: 0
+  과밀억제권역: false   # 수도권정비계획법 시행령 별표1 원문 확인
+
+# ───────── 게이트 권장 (비면 기본값·가정 표기) ─────────
+field:
+  중개사청취: ""
+  임차인사업자번호: ""
+  현장임장: ""
+finance:
+  금리: 0.055
+  LTV_감정: 0.7
+  LTV_낙찰: 0.8
+assumptions:
+  요구수익률: 0.06
+  명도비_평당: 10
+  관리비_평당: 1
+
+# ───────── 데이터 파일 (보고서 폴더 기준 상대경로) ─────────
+naver:
+  raw: "raw/naver_raw.json"          # scrape.js 결과
+  markers: "raw/naver_markers.json"  # scrape_markers.js 결과
+
+tenant_now: {rent: 0, deposit: 0}    # 현 임차조건 (만원) — 시세표 본건 행
+
+scenarios:            # code 는 표 머리글. market: 시세 정합 기준 / key: 표에서 초록 강조
+  - {code: A0, name: 현 조건 유지 (참고), rent: 0, deposit: 0}
+  - {code: A, name: 시세 재계약, rent: 0, deposit: 0, market: true, key: true}
+  - {code: B, name: 명도 후 재임차, rent: 0, deposit: 0, vacancy_months: 6, evict: true, mgmt_months: 6, cost_note: "명도 + 공실6월 이자·관리비"}
+  - {code: C, name: 최악, rent: 0, deposit: 0, vacancy_months: 12, evict: true, mgmt_months: 12, cost_note: "명도 + 공실12월 이자·관리비"}
+bid_rows: []          # 억. 최저가는 자동 포함
+bid_labels: {}        # {"6.5": "권장 상한"}
+
+verdict: {headline: "", sub: "", flags: "", bid_title: "", bid_note: "", forbid_title: "", forbid_body: "",
+          recs: [[primary, "", "", ""]]}
+overview: {title: "", subtitle: "", appraisal_sub: "", rows: [["소재지", ""]]}
+photos: {title: "", subtitle: "", main: "", side: [], cards: [[primary, "", [""]], [warn, "", [""]]]}
+plan: {title: "", subtitle: "", floor_plan: "", location: "", exterior: [], note: ""}
+rights: {title: "", subtitle: "", registry: [["접수", "권리", "권리자", "금액", "소멸"]], tenant_title: "",
+         tenants: [["", "", "", "", ""]], tenant_note: "", cards: [[ok, "", [""]], [warn, "", [""]]]}
+tenant: null          # 임차인 조사 없으면 null → 슬라이드 생략
+split: null           # 분할 임대 검토(선택). 쓰면 11-A 슬라이드 생성 — 스키마는 2024_78261 case.yaml 참고
+                      # {title, subtitle, unit_py, rent_bands, sale_title, sale_rows, sale_note, base_code, base_note,
+                      #  scenarios: [{code, name, rent, deposit, vacancy_months, evict, mgmt_months, capex(억), cap_rate?, note}],
+                      #  cards: [[level, title, [lines]] x2]}
+market: {title: "", subtitle: "", comps_title: "", comps_note: "", estimate_rows: [], judgement_title: "", judgement: []}
+map: {image: map_crop.png, crop_offset: [140, 120], subject_px: null, subject_label: "", note: ""}
+demand: {title: "", subtitle: "", 배후세대_실효: 0, 배후단지수: 0, 상가필지: 0, 세대당필지: 0, 입지등급: "", 기준선대비: 0,
+         표본경고: "", 단지: [], cards: [[info, "", [""]], [primary, "", [""]]]}
+scenario_text: {title: "", reading: []}
+risk_title: ""
+risks: [[risk, "", ""]]
+actions: {headline: "", sub: "", boxes: [[primary, "", ""], [ok, "", ""]], todo_title: "", todo: [["", ""]]}
+sources: ""
+cover_foot: ""
